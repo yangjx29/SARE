@@ -12,7 +12,7 @@ from utils.fileios import dump_json, load_json, dump_txt
 from data import DATA_STATS, PROMPTERS, DATA_DISCOVERY
 from data.extract_from_testsets import get_test_images_by_percentage, validate_test_set, get_dataset_key_for_test
 import importlib
-from cvd.description_generator import CDVCaptioner
+from description_generator import Description_Generator
 from retrieval.multimodal_retrieval import MultimodalRetrieval
 from fast_slow_thinking_system import FastSlowThinkingSystem
 from utils.util import is_similar

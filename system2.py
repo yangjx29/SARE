@@ -405,11 +405,9 @@ Return ONLY a JSON object with the following fields:
     "key_features": "main visual features supporting your decision",
     "alternative_candidates": ["category1", "category2"] (if applicable)
 }}"""  
-        
         try:
             response = self._cached_mllm_call(query_image_path, prompt, image)
-            
-              
+
             try:
                 json_match = re.search(r'\{.*\}', response, re.DOTALL)
                 if json_match:

@@ -17,7 +17,7 @@ from sklearn.metrics.pairwise import cosine_similarity
   
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.util import is_similar
-from cvd.description_generator import CDVCaptioner
+from description_generator import Description_Generator
   
   
 import json
