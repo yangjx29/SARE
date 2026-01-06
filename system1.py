@@ -269,215 +269,128 @@ class FastThinkingOptimized:
         
         return adaptive_threshold
     
-    def trigger_lcb_optimized(self, img_category: str, text_category: str, 
-                             img_confidence: float, text_confidence: float,
-                             fused_top1: str, fused_top1_prob: float, fused_margin: float,
-                             topk_overlap: bool, name_soft_agree: bool) -> Tuple[bool, str, float, Dict]:
-            
-        trigger_reason = {}
-        
-        if fused_top1_prob >= self.fused_conf_threshold and fused_margin >= self.fused_margin_threshold:
-            trigger_reason["type"] = "high_confidence_margin"
-            trigger_reason["fused_prob"] = fused_top1_prob
-            trigger_reason["margin"] = fused_margin
-            return False, fused_top1, fused_top1_prob, trigger_reason
-        
-        categories_match_soft = is_similar(img_category, text_category, threshold=self.similarity_threshold) or name_soft_agree
-        if categories_match_soft:
-              
-            if img_confidence >= self.per_modality_conf_threshold or text_confidence >= self.per_modality_conf_threshold:
-                trigger_reason["type"] = "modality_consistency"
-                trigger_reason["img_conf"] = img_confidence
-                trigger_reason["text_conf"] = text_confidence
-                return False, fused_top1, float(max(img_confidence, text_confidence)), trigger_reason
-        
-        if img_category == text_category or is_similar(img_category, text_category, threshold=0.4):
-            if fused_top1_prob >= 0.2:    
-                trigger_reason["type"] = "exact_modality_match"
-                trigger_reason["fused_prob"] = fused_top1_prob
-                return False, fused_top1, fused_top1_prob, trigger_reason
-        
-          
-        if categories_match_soft and fused_top1_prob >= 0.3:
-            trigger_reason["type"] = "soft_modality_match"
-            trigger_reason["fused_prob"] = fused_top1_prob
-            return False, fused_top1, fused_top1_prob, trigger_reason
-        
-        if fused_top1_prob >= 0.40 and fused_margin >= 0.06:
-            trigger_reason["type"] = "medium_confidence_margin"
-            trigger_reason["fused_prob"] = fused_top1_prob
-            trigger_reason["margin"] = fused_margin
-            return False, fused_top1, fused_top1_prob, trigger_reason
-        
-          
-        if fused_top1_prob >= 0.4:
-            trigger_reason["type"] = "high_prob_low_margin"
-            trigger_reason["fused_prob"] = fused_top1_prob
-            trigger_reason["margin"] = fused_margin
-            return False, fused_top1, fused_top1_prob, trigger_reason
-        
-          
-        if fused_top1_prob >= 0.4 and fused_margin >= 0.04:
-            if categories_match_soft:
-                trigger_reason["type"] = "relaxed_confidence_modality"
-                trigger_reason["fused_prob"] = fused_top1_prob
-                trigger_reason["margin"] = fused_margin
-                return False, fused_top1, fused_top1_prob, trigger_reason
-        
-          
-        if fused_top1_prob >= 0.4 and topk_overlap:
-            trigger_reason["type"] = "medium_prob_overlap_early"
-            trigger_reason["fused_prob"] = fused_top1_prob
-            return False, fused_top1, fused_top1_prob, trigger_reason
-        
-        if fused_top1_prob >= 0.4 and fused_margin >= 0.05:
-            trigger_reason["type"] = "pre_lcb_confidence"
-            trigger_reason["fused_prob"] = fused_top1_prob
-            trigger_reason["margin"] = fused_margin
-            return False, fused_top1, fused_top1_prob, trigger_reason
-        
-        confidence_scores = [
-            max(0.0, min(1.0, float(img_confidence))),
-            max(0.0, min(1.0, float(text_confidence))),
-            max(0.0, min(1.0, float(fused_top1_prob)))
-        ]
-        category_for_lcb = fused_top1
-        
-          
-        if category_for_lcb not in self.category_stats:
-            self.category_stats[category_for_lcb] = {"n": 0, "m": 0}
-        
-          
-        lcb_value = self.calculate_lcb(category_for_lcb, confidence_scores)
-        
-          
-        adaptive_threshold = self._get_adaptive_lcb_threshold()
-        
-          
-        if lcb_value >= adaptive_threshold:
-            trigger_reason["type"] = "lcb_pass"
-            trigger_reason["lcb_value"] = lcb_value
-            trigger_reason["threshold"] = adaptive_threshold
-            return False, fused_top1, fused_top1_prob, trigger_reason
-        
-        if lcb_value >= (adaptive_threshold * 0.7) and fused_top1_prob >= 0.5:
-            trigger_reason["type"] = "lcb_near_threshold"
-            trigger_reason["lcb_value"] = lcb_value
-            trigger_reason["threshold"] = adaptive_threshold
-            trigger_reason["fused_prob"] = fused_top1_prob
-            return False, fused_top1, fused_top1_prob, trigger_reason
-        
-        if fused_top1_prob >= 0.5 and fused_margin >= 0.05:
-              
-            if is_similar(img_category, text_category, threshold=0.4):
-                trigger_reason["type"] = "high_prob_modality_match"
-                trigger_reason["fused_prob"] = fused_top1_prob
-                trigger_reason["margin"] = fused_margin
-                return False, fused_top1, fused_top1_prob, trigger_reason        
-          
-        trigger_reason["type"] = "need_slow_thinking"
-        trigger_reason["lcb_value"] = lcb_value
-        trigger_reason["threshold"] = adaptive_threshold
-        trigger_reason["fused_prob"] = fused_top1_prob
-        trigger_reason["margin"] = fused_margin
-        avg_confidence = (img_confidence + text_confidence) / 2
-        return True, "conflict", avg_confidence, trigger_reason
-    
-    def update_stats(self, category: str, is_correct: bool, used_slow_thinking: bool = False):
-            
-        self.category_stats[category]["n"] += 1
-        if is_correct:
-            self.category_stats[category]["m"] += 1
-        
-        self.total_predictions += 1
-        
-          
-        if used_slow_thinking:
-            self.performance_stats["slow_path_count"] += 1
-            if is_correct:
-                self.performance_stats["slow_path_correct"] += 1
+    def trigger_dynamic_sare(self, category: str, p_hat_c: float, 
+                         P_fuse_distribution: np.ndarray, top1_prob: float) -> Tuple[bool, Dict]:
+
+        eta = 1.0   
+        alpha = 0.5 
+        threshold_T = 0.6 
+
+
+        stats = self.category_stats.get(category, {"n_c": 1}) 
+        n_c = stats.get("n_c", 1)
+        N_total = self.total_support_samples 
+
+
+        if n_c > 0:
+            hoeffding_term = eta * np.sqrt(np.log(N_total) / (2 * n_c))
         else:
-            self.performance_stats["fast_path_count"] += 1
-            if is_correct:
-                self.performance_stats["fast_path_correct"] += 1
-        
-        self.save_stats()
-    
-    def fast_thinking_pipeline(self, query_image_path: str, top_k: int = 5) -> Dict:
-            
-          
-        img_category, img_confidence, img_results = self.image_to_image_retrieval(query_image_path, top_k)
-        
-          
-        text_category, text_confidence, text_results = self.image_to_text_retrieval(query_image_path, top_k)
-        
-          
-        fused_results = self.fuse_results(img_results, text_results)
-        fused_top1 = fused_results[0][0] if fused_results else img_category
-        
-          
-        fused_scores = np.array([s for _, s in fused_results], dtype=np.float32) if fused_results else np.array([1.0], dtype=np.float32)
-        fused_scaled = fused_scores / self.softmax_temp
-        fused_scaled = fused_scaled - fused_scaled.max()
-        fused_exps = np.exp(fused_scaled)
-        fused_probs = fused_exps / (fused_exps.sum() + 1e-12)
-        fused_top1_prob = float(fused_probs[0]) if fused_probs.size > 0 else 1.0
-        fused_margin = float(fused_probs[0] - fused_probs[1]) if fused_probs.size > 1 else fused_top1_prob
-        
-          
-        img_topk = [c for c, _ in img_results[:self.topk_for_overlap]]
-        text_topk = [c for c, _ in text_results[:self.topk_for_overlap]]
-        topk_overlap = any(c in text_topk for c in img_topk)
-        
-          
-        name_soft_agree = False
-        for ci in img_topk:
-            for ct in text_topk:
-                if is_similar(ci, ct, threshold=self.similarity_threshold):
-                    name_soft_agree = True
-                    break
-            if name_soft_agree:
-                break
-        
-          
-        img_probs = self._to_probs(img_results)
-        text_probs = self._to_probs(text_results)
-        img_confidence = float(max(img_probs.values())) if img_probs else 0.0
-        text_confidence = float(max(text_probs.values())) if text_probs else 0.0
-        
-          
-        need_slow_thinking, predicted_category, confidence, trigger_reason = self.trigger_lcb_optimized(
-            img_category, text_category, img_confidence, text_confidence,
-            fused_top1, fused_top1_prob, fused_margin, topk_overlap, name_soft_agree
-        )
-          
-        lcb_map = {}
-        confidence_scores = [img_confidence, text_confidence, fused_top1_prob]
-        lcb_value = self.calculate_lcb(fused_top1, confidence_scores)
-        lcb_map[fused_top1] = lcb_value
-        
-          
-        predicted_fast = fused_top1
-        
-        result = {
-            "predicted_category": predicted_category,
-            "confidence": confidence,
-            "need_slow_thinking": need_slow_thinking,
-            "fused_top1": fused_top1,
-            "predicted_fast": predicted_fast,
-            "img_category": img_category,
-            "text_category": text_category,
-            "img_confidence": img_confidence,
-            "text_confidence": text_confidence,
-            "fused_results": fused_results,
-            "fused_top1_prob": fused_top1_prob,
-            "fused_margin": fused_margin,
-            "topk_overlap": topk_overlap,
-            "name_soft_agree": name_soft_agree,
-            "img_results": img_results,
-            "text_results": text_results,
-            "lcb_map": lcb_map,
-            "trigger_reason": trigger_reason    
+            hoeffding_term = 1.0 # Max penalty if unseen
+
+
+        entropy_term = -np.sum(P_fuse_distribution * np.log(P_fuse_distribution + 1e-12))
+        weighted_entropy = alpha * entropy_term
+
+
+        G_score = p_hat_c - hoeffding_term - weighted_entropy
+
+        trigger_details = {
+            "G_score": float(G_score),
+            "p_hat_c": float(p_hat_c),
+            "hoeffding_penalty": float(hoeffding_term),
+            "entropy_penalty": float(weighted_entropy),
+            "n_c": n_c,
+            "threshold": threshold_T
         }
+
+
+        if G_score > threshold_T:
+            return False, trigger_details
+        else:
+            return True, trigger_details  
         
-        return result
+        def update_stats(self, category: str, is_correct: bool, used_slow_thinking: bool = False):
+                
+            self.category_stats[category]["n"] += 1
+            if is_correct:
+                self.category_stats[category]["m"] += 1
+            
+            self.total_predictions += 1
+            
+            
+            if used_slow_thinking:
+                self.performance_stats["slow_path_count"] += 1
+                if is_correct:
+                    self.performance_stats["slow_path_correct"] += 1
+            else:
+                self.performance_stats["fast_path_count"] += 1
+                if is_correct:
+                    self.performance_stats["fast_path_correct"] += 1
+            
+            self.save_stats()
+        
+        def fast_thinking_pipeline(self, query_image_path: str, top_k: int = 5) -> Dict:
+
+            img_category, img_confidence, img_results = self.image_to_image_retrieval(query_image_path, top_k)
+            text_category, text_confidence, text_results = self.image_to_text_retrieval(query_image_path, top_k)
+
+            img_dict = dict(img_results)
+            text_dict = dict(text_results)
+            all_candidates = list(set(img_dict.keys()) | set(text_dict.keys()))
+
+
+            v_scores = np.array([img_dict.get(c, -1e9) for c in all_candidates])
+            t_scores = np.array([text_dict.get(c, -1e9) for c in all_candidates])
+
+            # Apply temperature scaling
+            P_img = softmax(v_scores / self.softmax_temp)
+            P_text = softmax(t_scores / self.softmax_temp)
+
+            # 4. Linear Fusion (Eq. 3) 
+            # "P_fuse = lambda * P_img + (1 - lambda) * P_text" where lambda = 0.3
+            lambda_val = 0.3
+            P_fuse = lambda_val * P_img + (1 - lambda_val) * P_text
+
+            fuse_dict = {c: p for c, p in zip(all_candidates, P_fuse)}
+            
+            # Sort to find Top-1 candidate
+            sorted_candidates = sorted(fuse_dict.items(), key=lambda x: x[1], reverse=True)
+            top1_category, top1_prob = sorted_candidates[0]
+
+            # 5. Reciprocal Rank Fusion (Eq. 4) [cite: 559, 561]
+            # "R(c) = Sum(1 / (k + r_m(c)))" where k=60
+            # Note: Ranks must be 1-based.
+            k_rrf = 60.0
+            
+            # Get ranks for the top1_category in both lists
+            # If not present in top_k, assign a large rank penalty (e.g., top_k + 1)
+            rank_v = next((i + 1 for i, (c, _) in enumerate(img_results) if c == top1_category), top_k + 100)
+            rank_t = next((i + 1 for i, (c, _) in enumerate(text_results) if c == top1_category), top_k + 100)
+            
+            RRF_score = (1 / (k_rrf + rank_v)) + (1 / (k_rrf + rank_t))
+
+            # 6. Final Retrieval Confidence (Eq. 5) [cite: 566]
+            # "p_hat_c = P_fuse(c) + beta * R(c)" where beta = 0.1
+            beta_val = 0.1
+            p_hat_c = top1_prob + (beta_val * RRF_score)
+
+            # 7. Dynamic Trigger Decision (Eq. 6) 
+            need_slow_thinking, trigger_details = self.trigger_dynamic_sare(
+                category=top1_category,
+                p_hat_c=p_hat_c,
+                P_fuse_distribution=P_fuse, # Needed for Entropy
+                top1_prob=top1_prob
+            )
+
+            result = {
+                "predicted_category": top1_category,
+                "need_slow_thinking": need_slow_thinking,
+                "confidence": p_hat_c,
+                "fused_top1_prob": top1_prob,
+                "rrf_score": RRF_score,
+                "trigger_details": trigger_details,
+                "img_results": img_results,
+                "text_results": text_results
+            }
+            
+            return result

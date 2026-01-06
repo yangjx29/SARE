@@ -1,21 +1,26 @@
-# SARE: Self-Adaptive Reasoning Enhancement
+# SARE: Sample-wise Adaptive Reasoning for Training-free Fine-grained Visual Recognition
 
 This is the anonymous repository for the paper submission. This repository contains the implementation of SARE, a self-adaptive reasoning enhancement framework for fine-grained visual recognition.
 
 ## 📋 Overview
 
-SARE introduces a dual-system cognitive framework inspired by human cognition:
-- **System 1 (Fast Thinking)**: Rapid pattern recognition using cached knowledge
-- **System 2 (Slow Thinking)**: Deliberate reasoning with experience-based retrieval
+SARE proposes a dual-system framework for Fine-Grained Visual Recognition (FGVR) inspired by human cognitive processes:
+- **System 1 (Fast Retrieval-based Perception)**: Rapid, intuitive judgments using a **Multimodal Prototype Library** to handle straightforward samples efficiently.
+- **System 2 (Experience-guided Nuanced Reasoning)**: Deliberate, step-by-step analysis invoked only for ambiguous cases, utilizing a **Self-Reflective Experience Library** to focus on discriminative details.
 
 ![Overview](fig/overview.png)
 
 ## 🎯 Key Features
 
-- **Self-Belief Mechanism**: Dynamic confidence assessment for adaptive reasoning
-- **Experience Base**: Multimodal retrieval-augmented generation
-- **Knowledge Base**: Category-level feature caching for fast inference
-- **Dual-System Architecture**: Automatic switching between fast and slow thinking
+- **Statistics-based Dynamic Trigger**: A mechanism that dynamically routes samples to System 2 based on fused confidence scores, historical category difficulty, and candidate ambiguity.
+- **Self-Reflective Experience Mechanism**: A closed-loop process that distills "reusable discriminative guidance" from past failures (without parameter updates) to prevent repeated errors.
+- **Dual-System Architecture**: Synergizes fast retrieval with nuanced reasoning to optimize the trade-off between accuracy and computational efficiency.
+
+## 📚 Knowledge Base Construction
+SARE constructs three lightweight offline libraries to support adaptive inference:
+1. **Multimodal Prototype Library**: Contains visual (CLIP embeddings) and textual (LVLM descriptions) prototypes for fast System 1 retrieval.
+2. **Statistical Retrieval Library**: Records class-conditional retrieval history to calibrate uncertainty and support the dynamic trigger.
+3. **Self-Reflective Experience Library**: Stores structured decision rules abstracted from model self-reflection on hard samples.
 
 ## 📁 Project Structure
 
@@ -25,7 +30,7 @@ SARE/
 │   └── mllm_bot.py              # MLLM interface
 ├── retrieval/
 │   └── multimodal_retrieval.py  # Multimodal retrieval module
-├── main.py                       # Main entry point
+├── main.py                       # Main
 ├── system1.py                    # Fast thinking system
 ├── system2.py                    # Slow thinking system
 ├── fast_slow_thinking_system.py # Integrated dual-system
@@ -33,7 +38,7 @@ SARE/
 ├── experience_base_builder.py   # Experience base construction
 ├── description_generator.py     # Visual description generation
 ├── config_template.yaml         # Configuration template
-├── requirements.txt             # Python dependencies
+├── requirements.txt             
 └── fig/                         # Figures and visualizations
 ```
 
@@ -50,7 +55,7 @@ SARE/
 
 #### 1. Build Knowledge Base
 
-First, build the category-level knowledge base from training data:
+First, build the category-level knowledge base :
 
 ```bash
 python main.py \

@@ -241,56 +241,19 @@ class FastSlowThinkingSystem:
         need_slow_thinking = use_slow_thinking if use_slow_thinking is not None else fast_result["need_slow_thinking"]
         
         if need_slow_thinking:
-     
+    
             slow_start_time = time.time()
-            
-              
+
             slow_result = self.slow_thinking.slow_thinking_pipeline_optimized(
                 query_image_path, fast_result, top_k
-            )
-            
+            )         
             slow_time = time.time() - slow_start_time
-            
-              
+        
             fast_pred = fast_result.get("fused_top1", fast_result.get("predicted_category", "unknown"))
             slow_pred = slow_result["predicted_category"]
             fast_conf = fast_result.get("fused_top1_prob", fast_result.get("confidence", 0.0))
             slow_conf = slow_result.get("confidence", 0.0)
-            
-              
             fast_slow_consistent = is_similar(fast_pred, slow_pred, threshold=0.5)
-            
-            if fast_slow_consistent:
-                  
-                final_prediction = slow_pred
-                final_confidence = slow_conf
-                final_reasoning = slow_result["reasoning"]
-            else:
-                  
-                lcb_map = fast_result.get('lcb_map', {}) or {}
-                lcb_value = float(lcb_map.get(slow_pred, lcb_map.get(fast_pred, 0.5))) if isinstance(lcb_map, dict) else 0.5
-                
-                if slow_conf >= 0.80:
-                      
-                    final_prediction = slow_pred
-                    final_confidence = slow_conf
-                    final_reasoning = slow_result["reasoning"] + " | Fast prediction: " + fast_pred
-                elif fast_conf >= 0.75 and lcb_value >= 0.70:
-                      
-                    final_prediction = fast_pred
-                    final_confidence = fast_conf
-                    final_reasoning = f"Fast thinking with high confidence (LCB: {lcb_value:.3f}) | Slow prediction: {slow_pred}"
-                elif slow_conf >= 0.70 and fast_conf < 0.70:
-                      
-                    final_prediction = slow_pred
-                    final_confidence = slow_conf
-                    final_reasoning = slow_result["reasoning"] + " | Fast prediction: " + fast_pred
-                else:
-                      
-     
-                    final_prediction, final_confidence, final_reasoning = self._final_decision(
-                        query_image_path, fast_result, slow_result, top_k
-                    )
             
             result.update({
                 "slow_result": slow_result,
