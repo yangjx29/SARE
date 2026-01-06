@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Experiments and outputs
+experiments/*/
+!experiments/.gitkeep
+results/
+outputs/
+
+# Models (users should download separately)
+models/
+!models/.gitkeep
+
+# Datasets (users should download separately)
+datasets/
+!datasets/.gitkeep
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env

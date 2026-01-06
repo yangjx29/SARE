@@ -1,0 +1,30 @@
+# Core dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.37.0
+accelerate>=0.20.0
+
+# Vision and Image Processing
+Pillow>=9.5.0
+opencv-python>=4.7.0
+scikit-image>=0.20.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+pyyaml>=6.0
+
+# Retrieval and Embeddings
+faiss-cpu>=1.7.4  # Use faiss-gpu if you have GPU
+sentence-transformers>=2.2.0
+
+# Utilities
+tqdm>=4.65.0
+termcolor>=2.3.0
+pprint
+
+# Model-specific
+qwen-vl-utils>=0.0.1
+
+# Optional: For better performance
+einops>=0.6.1

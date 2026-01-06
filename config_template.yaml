@@ -1,0 +1,53 @@
+# SARE Configuration Template
+# Please copy this file and modify according to your environment
+
+# Paths Configuration
+paths:
+  # Root directory for datasets
+  data_root: "./datasets"
+  
+  # Root directory for experiments output
+  experiments_root: "./experiments"
+  
+  # Root directory for downloaded models
+  models_root: "./models"
+
+# Model Configuration
+models:
+  # MLLM model (Qwen2.5-VL)
+  # Download from: https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct
+  qwen:
+    name: "Qwen2.5-VL-7B-Instruct"
+    path: "./models/Qwen/Qwen2.5-VL-7B-Instruct"
+    
+  # CLIP model for multimodal retrieval
+  # Download from: https://huggingface.co/openai/clip-vit-base-patch32
+  clip:
+    name: "clip-vit-base-patch32"
+    path: "./models/Clip/clip-vit-base-patch32"
+
+# Dataset Configuration
+datasets:
+  # Example: Stanford Dogs 120
+  dogs_120:
+    name: "dogs_120"
+    num_classes: 120
+    data_dir: "./datasets/dogs_120"
+    
+
+# Training Configuration
+training:
+  seed: 42
+  device: "cuda"
+  batch_size: 1
+  
+# Knowledge Base Configuration
+knowledge_base:
+  num_per_category: 10
+  confidence_threshold: 0.6
+  similarity_threshold: 0.7
+
+# Retrieval Configuration
+retrieval:
+  fusion_method: "concat"  # Options: concat, add, multiply
+  top_k: 10

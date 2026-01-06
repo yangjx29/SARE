@@ -1,0 +1,44 @@
+# Experiment Configuration for Stanford Dogs 120
+
+# Dataset Configuration
+dataset_name: "dogs_120"
+num_classes: 120
+
+# Data paths (relative to data_root in env_machine.yml)
+train_data: "dogs_120/train"
+test_data: "dogs_120/test"
+
+# Knowledge Base Configuration
+knowledge_base:
+  num_per_category: 10
+  use_descriptions: true
+  description_method: "visual"
+
+# Experience Base Configuration
+experience_base:
+  enable: true
+  max_per_category: 100
+  
+# Retrieval Configuration
+retrieval:
+  fusion_method: "concat"  # Options: concat, add, multiply
+  top_k: 5
+  similarity_metric: "cosine"
+
+# Fast-Slow Thinking Configuration
+fast_slow:
+  confidence_threshold: 0.8
+  similarity_threshold: 0.7
+  use_slow_thinking: true
+  use_experience_base: true
+
+# Model Configuration
+model:
+  mllm: "Qwen2.5-VL-7B"
+  clip: "clip-vit-base-patch32"
+  
+# Output Configuration
+output:
+  save_predictions: true
+  save_visualizations: false
+  verbose: true

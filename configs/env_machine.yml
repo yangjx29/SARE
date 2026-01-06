@@ -1,0 +1,28 @@
+# Environment Configuration
+# This file contains machine-specific settings
+
+# Device Configuration
+device: "cuda"
+device_id: 0
+
+# Model Paths (relative to project root)
+model_root: "./models"
+
+# Data Paths (relative to project root)
+data_root: "./datasets"
+
+# Experiments Output
+experiments_root: "./experiments"
+
+# Random Seed
+seed: 42
+
+# Memory Settings
+torch_dtype: "auto"
+device_map: "auto"
+
+# Optional: Batch Size
+batch_size: 1
+
+# Optional: Number of Workers for DataLoader
+num_workers: 4
