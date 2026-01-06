@@ -96,4 +96,4 @@ python main.py \
     --test_data_dir ./datasets/dogs_120/test \
     --results_out ./results/dog120_results.json \
 ```
-
+![main_results](fig/main_results.png)
